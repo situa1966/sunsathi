@@ -1,0 +1,5 @@
+{
+  "name": "Sun-Sathi Solar Analyzer",
+  "description": "AI-powered solar potential and subsidy analyzer for Indian households, helping users estimate generation, savings, and PM Surya Ghar Yojana benefits.",
+  "requestFramePermissions": []
+}

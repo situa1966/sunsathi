@@ -43,3 +43,20 @@ export interface ConsumptionAnalysis {
   recommendedSystemSizeKw: number;
   breakdown: { name: string; monthlyCost: number; percentage: number }[];
 }
+
+export interface InefficientAppliance {
+  name: string;
+  detectedCondition: 'Old/Inefficient' | 'Modern/Efficient';
+  currentWattage: number;
+  efficientWattage: number; // What a modern 5-star version uses
+  monthlyEnergyLossKwh: number;
+  monthlyMoneyLossInr: number;
+  replacementRecommendation: string;
+}
+
+export interface EfficiencyResult {
+  appliances: InefficientAppliance[];
+  totalMonthlyLossInr: number;
+  efficiencyScore: number; // 0 to 100
+  analysisSummary: string;
+}

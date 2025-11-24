@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type, Schema } from "@google/genai";
-import { IndianRegion, SolarAnalysisResult, Appliance } from "../types";
+import { IndianRegion, SolarAnalysisResult, Appliance, EfficiencyResult } from "../types";
 import { PM_SURYA_GHAR_RULES, REGION_SUN_HOURS } from "../constants";
 
 const MODEL_ID = "gemini-2.5-flash";
@@ -36,6 +36,30 @@ const applianceDetectionSchema: Schema = {
         }
       }
     }
+  }
+};
+
+const efficiencyAuditSchema: Schema = {
+  type: Type.OBJECT,
+  properties: {
+    appliances: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          name: { type: Type.STRING },
+          detectedCondition: { type: Type.STRING, enum: ['Old/Inefficient', 'Modern/Efficient'] },
+          currentWattage: { type: Type.NUMBER, description: "Estimated wattage of the detected device" },
+          efficientWattage: { type: Type.NUMBER, description: "Wattage of a modern 5-star equivalent" },
+          monthlyEnergyLossKwh: { type: Type.NUMBER, description: "Difference in kWh assuming 6 hours daily usage" },
+          monthlyMoneyLossInr: { type: Type.NUMBER, description: "Loss in Rupees at ₹8/unit" },
+          replacementRecommendation: { type: Type.STRING, description: "Specific advice (e.g., Replace CFL with LED)" }
+        }
+      }
+    },
+    totalMonthlyLossInr: { type: Type.NUMBER },
+    efficiencyScore: { type: Type.NUMBER, description: "Score from 0 (Wasteful) to 100 (Efficient)" },
+    analysisSummary: { type: Type.STRING }
   }
 };
 
@@ -163,3 +187,44 @@ export const detectAppliancesFromImage = async (base64Image: string): Promise<Ap
     throw new Error("Could not identify appliances. Please try again.");
   }
 }
+
+export const analyzeVideoEfficiency = async (base64Video: string, mimeType: string): Promise<EfficiencyResult> => {
+  const ai = getAiClient();
+
+  const prompt = `
+    Analyze this video of a room in an Indian household. 
+    Scan for electrical appliances (Fans, Lights, ACs, Fridges, TVs).
+    
+    For each appliance detected:
+    1. Determine if it looks "Old/Inefficient" (e.g., boxy CRT TV, yellowed plastic AC, incandescent bulb, thick blade fan) OR "Modern/Efficient" (e.g., LED, BLDC Fan, Inverter AC).
+    2. Estimate its *Current Wattage* based on its visual age.
+    3. Estimate the *Efficient Wattage* of a modern 5-Star rated replacement.
+    4. Calculate monthly energy loss assuming standard usage (AC=8hrs, Light=6hrs, Fan=12hrs).
+    5. Calculate money loss at ₹8/unit.
+
+    Return a comprehensive JSON report including a total 'Efficiency Score' (0-100) and a summary.
+  `;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: MODEL_ID,
+      contents: {
+        parts: [
+          { inlineData: { mimeType: mimeType, data: base64Video } },
+          { text: prompt }
+        ]
+      },
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: efficiencyAuditSchema,
+      }
+    });
+
+    if (!response.text) throw new Error("No response from Gemini.");
+    return JSON.parse(response.text) as EfficiencyResult;
+
+  } catch (error) {
+    console.error("Gemini Video Analysis Error:", error);
+    throw new Error("Failed to analyze video. Ensure file is < 10MB and format is supported.");
+  }
+};

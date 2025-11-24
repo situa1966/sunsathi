@@ -4,12 +4,13 @@ import InputSection from './components/InputSection';
 import ResultsReport from './components/ResultsReport';
 import ApplianceCalculator from './components/ApplianceCalculator';
 import ConsumptionReport from './components/ConsumptionReport';
+import VideoEfficiencyAudit from './components/VideoEfficiencyAudit';
 import { analyzeSolarPotential } from './services/geminiService';
 import { IndianRegion, SolarAnalysisResult, Appliance, ConsumptionAnalysis } from './types';
-import { AlertTriangle, Sun, Calculator } from 'lucide-react';
+import { AlertTriangle, Sun, Calculator, ScanEye } from 'lucide-react';
 import { TARIFF_PER_UNIT } from './constants';
 
-type Tab = 'solar-check' | 'money-saver';
+type Tab = 'solar-check' | 'money-saver' | 'efficiency-check';
 
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>('solar-check');
@@ -88,24 +89,22 @@ function App() {
         <div className="text-center max-w-3xl mx-auto space-y-6">
           <div className="space-y-2">
             <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900">
-                {activeTab === 'solar-check' ? (
-                    <>Check Your Roof's <span className="text-orange-600">Solar Potential</span></>
-                ) : (
-                    <>Calculate Your <span className="text-blue-600">Savings</span></>
-                )}
+                {activeTab === 'solar-check' && <>Check Your Roof's <span className="text-orange-600">Solar Potential</span></>}
+                {activeTab === 'money-saver' && <>Calculate Your <span className="text-blue-600">Savings</span></>}
+                {activeTab === 'efficiency-check' && <>Find Hidden <span className="text-purple-600">Energy Leaks</span></>}
             </h2>
             <p className="text-gray-600 text-lg">
-                {activeTab === 'solar-check' 
-                    ? "Upload a roof photo to estimate generation, costs, and subsidy eligibility."
-                    : "Input your appliances to visualize energy consumption and how much you can save."}
+                {activeTab === 'solar-check' && "Upload a roof photo to estimate generation, costs, and subsidy eligibility."}
+                {activeTab === 'money-saver' && "Input your appliances to visualize energy consumption and how much you can save."}
+                {activeTab === 'efficiency-check' && "Upload a video of your room. AI will detect old, inefficient equipment costing you money."}
             </p>
           </div>
 
           {/* Tab Switcher */}
-          <div className="inline-flex bg-white p-1 rounded-xl shadow-sm border border-gray-200">
+          <div className="flex flex-wrap justify-center gap-2 bg-white p-1.5 rounded-xl shadow-sm border border-gray-200 w-fit mx-auto">
             <button
                 onClick={() => setActiveTab('solar-check')}
-                className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-semibold transition-all ${
+                className={`flex items-center gap-2 px-4 md:px-6 py-2.5 rounded-lg font-semibold transition-all ${
                     activeTab === 'solar-check' 
                     ? 'bg-orange-500 text-white shadow-md' 
                     : 'text-gray-500 hover:bg-gray-50'
@@ -116,7 +115,7 @@ function App() {
             </button>
             <button
                 onClick={() => setActiveTab('money-saver')}
-                className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-semibold transition-all ${
+                className={`flex items-center gap-2 px-4 md:px-6 py-2.5 rounded-lg font-semibold transition-all ${
                     activeTab === 'money-saver' 
                     ? 'bg-blue-600 text-white shadow-md' 
                     : 'text-gray-500 hover:bg-gray-50'
@@ -124,6 +123,17 @@ function App() {
             >
                 <Calculator size={18} />
                 Money Saver
+            </button>
+            <button
+                onClick={() => setActiveTab('efficiency-check')}
+                className={`flex items-center gap-2 px-4 md:px-6 py-2.5 rounded-lg font-semibold transition-all ${
+                    activeTab === 'efficiency-check' 
+                    ? 'bg-purple-600 text-white shadow-md' 
+                    : 'text-gray-500 hover:bg-gray-50'
+                }`}
+            >
+                <ScanEye size={18} />
+                Video Audit
             </button>
           </div>
         </div>
@@ -158,6 +168,12 @@ function App() {
                             onReset={() => setConsumptionAnalysis(null)} 
                         />
                     )}
+                </div>
+            )}
+
+            {activeTab === 'efficiency-check' && (
+                <div className="space-y-12 animate-fade-in">
+                    <VideoEfficiencyAudit />
                 </div>
             )}
         </div>
